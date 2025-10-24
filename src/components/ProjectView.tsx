@@ -1,25 +1,128 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from './ui/button'
-import { ArrowLeft, Settings, Play, Pause, Upload } from 'lucide-react'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
+import { ArrowLeft, Settings, Users, FolderOpen, Loader2, Plus, Minus } from 'lucide-react'
+import { 
+  useProject, 
+  useLinkDataRoom, 
+  useUnlinkDataRoom, 
+  useAddUserToProject, 
+  useRemoveUserFromProject 
+} from '../hooks/api'
+import type { UserRole } from '../types/api'
 
 export function ProjectView() {
   const { projectId } = useParams<{ projectId: string }>()
+  const [dataRoomId, setDataRoomId] = useState('')
+  const [userId, setUserId] = useState('')
+  const [userRole, setUserRole] = useState<UserRole>('viewer')
+  
+  const { data: project, isLoading, error } = useProject(projectId!)
+  const linkDataRoomMutation = useLinkDataRoom()
+  const unlinkDataRoomMutation = useUnlinkDataRoom()
+  const addUserMutation = useAddUserToProject()
+  const removeUserMutation = useRemoveUserFromProject()
 
-  // Mock project data based on ID
-  const getProjectData = (id: string) => {
-    const projects = {
-      '1': { name: 'Auralis Core', description: 'Core audio processing engine' },
-      '2': { name: 'Voice Recognition', description: 'Advanced voice recognition module' },
-      '3': { name: 'UI Components', description: 'Reusable React components' },
+  const handleLinkDataRoom = async () => {
+    if (dataRoomId.trim() && projectId) {
+      try {
+        await linkDataRoomMutation.mutateAsync({ projectId, dataRoomId: dataRoomId.trim() })
+        setDataRoomId('')
+      } catch (error) {
+        console.error('Error linking data room:', error)
+      }
     }
-    return projects[id as keyof typeof projects] || { name: 'Unknown Project', description: 'Project not found' }
   }
 
-  const project = getProjectData(projectId!)
+  const handleUnlinkDataRoom = async (roomId: string) => {
+    if (projectId) {
+      try {
+        await unlinkDataRoomMutation.mutateAsync({ projectId, dataRoomId: roomId })
+      } catch (error) {
+        console.error('Error unlinking data room:', error)
+      }
+    }
+  }
+
+  const handleAddUser = async () => {
+    if (userId.trim() && projectId) {
+      try {
+        await addUserMutation.mutateAsync({ 
+          projectId, 
+          userId: userId.trim(), 
+          body: { user_role: userRole }
+        })
+        setUserId('')
+      } catch (error) {
+        console.error('Error adding user:', error)
+      }
+    }
+  }
+
+  const handleRemoveUser = async (removeUserId: string) => {
+    if (projectId) {
+      try {
+        await removeUserMutation.mutateAsync({ projectId, userId: removeUserId })
+      } catch (error) {
+        console.error('Error removing user:', error)
+      }
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin mr-2" />
+          Loading project...
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center gap-4 mb-8">
+          <Link to="/">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
+        <div className="text-red-500 bg-red-50 p-4 rounded-md">
+          Error loading project: {error.message}
+        </div>
+      </div>
+    )
+  }
+
+  if (!project) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center gap-4 mb-8">
+          <Link to="/">
+            <Button variant="outline" size="sm">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
+        <div className="text-muted-foreground text-center py-8">
+          Project not found
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header with back button */}
+      {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <Link to="/">
           <Button variant="outline" size="sm">
@@ -28,8 +131,8 @@ export function ProjectView() {
           </Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-4xl font-bold text-gray-900">{project.name}</h1>
-          <p className="text-gray-600">{project.description}</p>
+          <h1 className="text-4xl font-bold">{project.name}</h1>
+          <p className="text-muted-foreground">{project.description || 'No description'}</p>
         </div>
         <Button variant="outline" size="sm">
           <Settings className="w-4 h-4 mr-2" />
@@ -37,81 +140,183 @@ export function ProjectView() {
         </Button>
       </div>
 
-      {/* Project ID indicator */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
-        <p className="text-blue-800">
-          <strong>Project ID:</strong> {projectId}
-        </p>
-      </div>
-
-      {/* Main project content area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left column - Main content */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4">Project Workspace</h2>
-            
-            {/* Audio controls */}
-            <div className="flex items-center gap-4 mb-6">
-              <Button>
-                <Play className="w-4 h-4 mr-2" />
-                Process Audio
-              </Button>
-              <Button variant="outline">
-                <Pause className="w-4 h-4 mr-2" />
-                Pause
-              </Button>
-              <Button variant="outline">
-                <Upload className="w-4 h-4 mr-2" />
-                Upload Files
-              </Button>
-            </div>
-
-            {/* Placeholder content */}
-            <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-              <p className="text-gray-500 mb-4">Project workspace area</p>
-              <p className="text-sm text-gray-400">
-                This is where you can work on your project. Add your project-specific components and functionality here.
-              </p>
-            </div>
+      {/* Project Info */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Project Information</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label className="text-sm font-medium text-muted-foreground">ID</Label>
+            <p className="font-mono text-sm">{project.id}</p>
           </div>
-        </div>
-
-        {/* Right column - Sidebar */}
-        <div className="space-y-6">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Project Info</h3>
-            <div className="space-y-3">
-              <div>
-                <span className="text-sm font-medium text-gray-500">Status:</span>
-                <span className="ml-2 text-green-600">Active</span>
-              </div>
-              <div>
-                <span className="text-sm font-medium text-gray-500">Created:</span>
-                <span className="ml-2">2 days ago</span>
-              </div>
-              <div>
-                <span className="text-sm font-medium text-gray-500">Last Modified:</span>
-                <span className="ml-2">1 hour ago</span>
-              </div>
-            </div>
+          <div>
+            <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+            <p className="capitalize">{project.status}</p>
           </div>
+          <div>
+            <Label className="text-sm font-medium text-muted-foreground">Created</Label>
+            <p>{new Date(project.created_at).toLocaleString()}</p>
+          </div>
+        </CardContent>
+      </Card>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Data Rooms Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <FolderOpen className="h-5 w-5 mr-2" />
+              Data Rooms ({project.data_room_ids.length})
+            </CardTitle>
+            <CardDescription>
+              Manage data rooms linked to this project
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Add Data Room */}
+            <div className="flex space-x-2">
+              <Input
+                placeholder="Data room ID"
+                value={dataRoomId}
+                onChange={(e) => setDataRoomId(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleLinkDataRoom()}
+              />
+              <Button 
+                onClick={handleLinkDataRoom}
+                disabled={!dataRoomId.trim() || linkDataRoomMutation.isPending}
+                size="sm"
+              >
+                {linkDataRoomMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+
+            {linkDataRoomMutation.error && (
+              <div className="text-sm text-red-500 bg-red-50 p-2 rounded">
+                {linkDataRoomMutation.error.message}
+              </div>
+            )}
+
+            {/* Data Room List */}
             <div className="space-y-2">
-              <Button variant="outline" className="w-full justify-start">
-                Export Project
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                Share Project
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                Duplicate Project
-              </Button>
+              {project.data_room_ids.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No data rooms linked</p>
+              ) : (
+                project.data_room_ids.map((roomId) => (
+                  <div key={roomId} className="flex items-center justify-between p-2 border rounded">
+                    <span className="font-mono text-sm">{roomId}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUnlinkDataRoom(roomId)}
+                      disabled={unlinkDataRoomMutation.isPending}
+                    >
+                      {unlinkDataRoomMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Minus className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                ))
+              )}
             </div>
-          </div>
-        </div>
+
+            {unlinkDataRoomMutation.error && (
+              <div className="text-sm text-red-500 bg-red-50 p-2 rounded">
+                {unlinkDataRoomMutation.error.message}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Users Management */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Users className="h-5 w-5 mr-2" />
+              Users ({project.accessible_user_project_ids.length})
+            </CardTitle>
+            <CardDescription>
+              Manage users with access to this project
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Add User */}
+            <div className="space-y-2">
+              <div className="flex space-x-2">
+                <Input
+                  placeholder="User ID"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddUser()}
+                />
+                <Select value={userRole} onValueChange={(value) => setUserRole(value as UserRole)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="editor">Editor</SelectItem>
+                    <SelectItem value="viewer">Viewer</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button 
+                  onClick={handleAddUser}
+                  disabled={!userId.trim() || addUserMutation.isPending}
+                  size="sm"
+                >
+                  {addUserMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {addUserMutation.error && (
+              <div className="text-sm text-red-500 bg-red-50 p-2 rounded">
+                {addUserMutation.error.message}
+              </div>
+            )}
+
+            {/* User List */}
+            <div className="space-y-2">
+              {project.accessible_user_project_ids.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No users assigned</p>
+              ) : (
+                project.accessible_user_project_ids.map((userProjectId) => (
+                  <div key={userProjectId} className="flex items-center justify-between p-2 border rounded">
+                    <span className="font-mono text-sm">{userProjectId}</span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemoveUser(userProjectId)}
+                      disabled={removeUserMutation.isPending}
+                    >
+                      {removeUserMutation.isPending ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Minus className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {removeUserMutation.error && (
+              <div className="text-sm text-red-500 bg-red-50 p-2 rounded">
+                {removeUserMutation.error.message}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
