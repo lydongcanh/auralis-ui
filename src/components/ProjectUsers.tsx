@@ -1,5 +1,5 @@
 import { useProjectUsers, useCreateUser, useAddUserToProject } from '../hooks/api'
-import { User, Shield, Plus } from 'lucide-react'
+import { User, Plus } from 'lucide-react'
 import { LoadingSpinner } from './LoadingSpinner'
 import { Button } from './ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
@@ -110,6 +110,17 @@ function UserRow({ projectUser }: { readonly projectUser: ProjectUserOut }) {
     }
   }
 
+  const getStatusColorClass = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500'
+      case 'disabled':
+        return 'bg-yellow-500'
+      default:
+        return 'bg-red-500'
+    }
+  }
+
   return (
     <div className="flex items-center justify-between p-6 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
       {/* Left side - Icon and User Info */}
@@ -121,14 +132,17 @@ function UserRow({ projectUser }: { readonly projectUser: ProjectUserOut }) {
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${getRoleColorClass(projectUser.user_role)}`}>
               {projectUser.user_role.toUpperCase()}
             </span>
+            <div className="flex items-center gap-1">
+              <div className={`h-2 w-2 rounded-full ${getStatusColorClass(projectUser.user_status)}`} />
+              <span className="text-xs font-medium text-gray-600 capitalize">{projectUser.user_status}</span>
+            </div>
           </div>
         </div>
       </div>
       
-      {/* Right side - Role Info */}
+      {/* Right side - Date or other info could go here */}
       <div className="flex items-center gap-2 text-gray-500 flex-shrink-0">
-        <Shield className="h-4 w-4" />
-        <span className="text-sm font-medium">Role: {projectUser.user_role}</span>
+        {/* Could add join date or other user info here if needed */}
       </div>
     </div>
   )

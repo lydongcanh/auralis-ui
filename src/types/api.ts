@@ -62,6 +62,7 @@ export interface ProjectUserOut {
   user_id: string
   user_auth_provider_user_id: string
   user_role: UserRole
+  user_status: EntityStatus
 }
 
 export interface AddUserToProjectBody {
