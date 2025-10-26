@@ -1,113 +1,109 @@
-import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
+import { Link } from 'react-router-dom'
+import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
-import { Users, FolderOpen, Building } from 'lucide-react'
-import { ProjectForm } from './ProjectForm'
-import { DataRoomForm } from './DataRoomForm'
-import { UserForm } from './UserForm'
-import { ProjectList } from './ProjectList'
-import { DataRoomList } from './DataRoomList'
-import { UserList } from './UserList'
+import { Building, Calendar, Eye } from 'lucide-react'
+import { useUserAccessibleProjects } from '../hooks/api'
+import { LoadingSpinner } from './LoadingSpinner'
+
+// Hardcoded user ID for now - will be replaced with Supabase auth later
+const CURRENT_USER_ID = '2279c80a-41b6-48ee-80fb-9b0377d79f18'
 
 export function Dashboard() {
-  const [activeForm, setActiveForm] = useState<'project' | 'dataroom' | 'user' | null>(null)
+  const { data: projects, isLoading, error } = useUserAccessibleProjects(CURRENT_USER_ID)
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner />
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="text-red-500 bg-red-50 p-4 rounded-md">
+          Error loading projects: {error.message}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold mb-2">Auralis Dashboard</h1>
-        <p className="text-muted-foreground">Manage your projects, data rooms, and users</p>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveForm('project')}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Create Project</CardTitle>
-            <Building className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+</div>
-            <p className="text-xs text-muted-foreground">Add a new project</p>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveForm('dataroom')}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Create Data Room</CardTitle>
-            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+</div>
-            <p className="text-xs text-muted-foreground">Add a new data room</p>
-          </CardContent>
-        </Card>
-
-        <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setActiveForm('user')}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Create User</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+</div>
-            <p className="text-xs text-muted-foreground">Add a new user</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Forms */}
-      {activeForm && (
+      {/* Projects List */}
+      {projects && projects.length > 0 ? (
+        <div className="space-y-4">
+          {projects.map((project) => (
+            <Card key={project.id} className="hover:shadow-md transition-all duration-200 border-l-4 border-l-transparent hover:border-l-blue-500">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-4">
+                      <Building className="h-6 w-6 text-blue-600" />
+                      <h3 className="text-xl font-semibold text-gray-900">{project.name}</h3>
+                      <span className={`text-xs font-medium px-3 py-1 rounded-full ${
+                        project.role === 'admin' 
+                          ? 'bg-red-100 text-red-700 border border-red-200' 
+                          : project.role === 'editor' 
+                          ? 'bg-blue-100 text-blue-700 border border-blue-200'
+                          : 'bg-gray-100 text-gray-700 border border-gray-200'
+                      }`}>
+                        {project.role.toUpperCase()}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-6 text-sm text-gray-500">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4" />
+                        <span>Created {new Date(project.created_at).toLocaleDateString('en-US', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className={`h-2 w-2 rounded-full ${
+                          project.status === 'active' 
+                            ? 'bg-green-500' 
+                            : project.status === 'disabled'
+                            ? 'bg-yellow-500'
+                            : 'bg-red-500'
+                        }`} />
+                        <span className="capitalize font-medium">{project.status}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="ml-6">
+                    <Link to={`/projects/${project.id}`}>
+                      <Button size="lg" className="min-w-[120px]">
+                        <Eye className="h-4 w-4 mr-2" />
+                        Open Project
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
         <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>
-                {activeForm === 'project' && 'Create New Project'}
-                {activeForm === 'dataroom' && 'Create New Data Room'}
-                {activeForm === 'user' && 'Create New User'}
-              </CardTitle>
-              <Button variant="outline" onClick={() => setActiveForm(null)}>Cancel</Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {activeForm === 'project' && <ProjectForm onSuccess={() => setActiveForm(null)} />}
-            {activeForm === 'dataroom' && <DataRoomForm onSuccess={() => setActiveForm(null)} />}
-            {activeForm === 'user' && <UserForm onSuccess={() => setActiveForm(null)} />}
+          <CardContent className="text-center py-12">
+            <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No Projects Found</h3>
+            <p className="text-muted-foreground mb-4">
+              You don't have access to any projects yet.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Contact your administrator to get access to projects.
+            </p>
           </CardContent>
         </Card>
       )}
-
-      {/* Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Projects</CardTitle>
-            <CardDescription>Your latest projects</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ProjectList />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Data Rooms</CardTitle>
-            <CardDescription>Available data rooms</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DataRoomList />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Users</CardTitle>
-            <CardDescription>System users</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <UserList />
-          </CardContent>
-        </Card>
-      </div>
     </div>
   )
 }
