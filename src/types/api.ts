@@ -58,6 +58,12 @@ export interface UserAccessibleProjectOut {
   role: UserRole
 }
 
+export interface ProjectUserOut {
+  user_id: string
+  user_auth_provider_user_id: string
+  user_role: UserRole
+}
+
 export interface AddUserToProjectBody {
   user_role: UserRole
 }

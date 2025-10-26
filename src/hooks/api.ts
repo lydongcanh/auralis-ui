@@ -12,6 +12,8 @@ export const queryKeys = {
   projects: {
     all: ['projects'] as const,
     detail: (id: string) => ['projects', id] as const,
+    dataRooms: (id: string) => ['projects', id, 'dataRooms'] as const,
+    users: (id: string) => ['projects', id, 'users'] as const,
   },
   dataRooms: {
     all: ['dataRooms'] as const,
@@ -53,6 +55,7 @@ export const useLinkDataRoom = () => {
       projectsApi.linkDataRoom(projectId, dataRoomId),
     onSuccess: (_, { projectId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.dataRooms(projectId) })
     },
   })
 }
@@ -65,6 +68,7 @@ export const useUnlinkDataRoom = () => {
       projectsApi.unlinkDataRoom(projectId, dataRoomId),
     onSuccess: (_, { projectId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.dataRooms(projectId) })
     },
   })
 }
@@ -85,6 +89,7 @@ export const useAddUserToProject = () => {
       projectsApi.addUser(projectId, userId, body),
     onSuccess: (_, { projectId, userId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.users(projectId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.users.projects(userId) })
     },
   })
@@ -98,8 +103,25 @@ export const useRemoveUserFromProject = () => {
       projectsApi.removeUser(projectId, userId),
     onSuccess: (_, { projectId, userId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.projects.detail(projectId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.projects.users(projectId) })
       queryClient.invalidateQueries({ queryKey: queryKeys.users.projects(userId) })
     },
+  })
+}
+
+export const useProjectDataRooms = (projectId: string) => {
+  return useQuery({
+    queryKey: queryKeys.projects.dataRooms(projectId),
+    queryFn: () => projectsApi.getDataRooms(projectId),
+    enabled: !!projectId,
+  })
+}
+
+export const useProjectUsers = (projectId: string) => {
+  return useQuery({
+    queryKey: queryKeys.projects.users(projectId),
+    queryFn: () => projectsApi.getUsers(projectId),
+    enabled: !!projectId,
   })
 }
 

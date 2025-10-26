@@ -7,6 +7,7 @@ import type {
   User, 
   UserIn, 
   UserAccessibleProjectOut,
+  ProjectUserOut,
   AddUserToProjectBody
 } from '../types/api'
 
@@ -62,6 +63,16 @@ export const projectsApi = {
 
   removeUser: async (projectId: string, userId: string): Promise<void> => {
     await apiClient.delete(`/projects/${projectId}/users/${userId}`)
+  },
+
+  getDataRooms: async (projectId: string): Promise<DataRoom[]> => {
+    const response: AxiosResponse<DataRoom[]> = await apiClient.get(`/projects/${projectId}/data-rooms`)
+    return response.data
+  },
+
+  getUsers: async (projectId: string): Promise<ProjectUserOut[]> => {
+    const response: AxiosResponse<ProjectUserOut[]> = await apiClient.get(`/projects/${projectId}/users`)
+    return response.data
   },
 }
 

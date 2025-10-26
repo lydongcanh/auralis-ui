@@ -6,7 +6,7 @@ import { useUserAccessibleProjects } from '../hooks/api'
 import { LoadingSpinner } from './LoadingSpinner'
 
 // Hardcoded user ID for now - will be replaced with Supabase auth later
-const CURRENT_USER_ID = '2279c80a-41b6-48ee-80fb-9b0377d79f18'
+const CURRENT_USER_ID = 'fdd39363-b1cd-430e-88a8-f1a6199f33ff'
 
 export function Dashboard() {
   const { data: projects, isLoading, error } = useUserAccessibleProjects(CURRENT_USER_ID)
@@ -32,7 +32,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="h-full w-full p-6 space-y-6 overflow-auto">
       {/* Projects List */}
       {projects && projects.length > 0 ? (
         <div className="space-y-4">

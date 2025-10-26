@@ -1,103 +1,104 @@
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
-import { useDataRoom } from '../hooks/api'
+import { useProjectDataRooms } from '../hooks/api'
 import { Folder, Calendar } from 'lucide-react'
 import { LoadingSpinner } from './LoadingSpinner'
+import type { DataRoom } from '../types/api'
 
 interface ProjectDataRoomsProps {
-  readonly dataRoomIds: string[]
+  readonly projectId: string
 }
 
-function DataRoomCard({ dataRoomId }: { readonly dataRoomId: string }) {
-  const { data: dataRoom, isLoading, error } = useDataRoom(dataRoomId)
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-center py-4">
-            <LoadingSpinner />
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
-  if (error || !dataRoom) {
-    return (
-      <Card className="border-red-200">
-        <CardContent className="p-4">
-          <div className="text-red-500 text-sm">
-            Failed to load data room: {dataRoomId}
-          </div>
-        </CardContent>
-      </Card>
-    )
+function DataRoomRow({ dataRoom }: { readonly dataRoom: DataRoom }) {
+  const getStatusColorClass = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-500'
+      case 'disabled':
+        return 'bg-yellow-500'
+      default:
+        return 'bg-red-500'
+    }
   }
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center space-x-2 text-lg">
-          <Folder className="h-5 w-5 text-blue-600" />
-          <span>{dataRoom.name}</span>
-          <span className={`text-xs px-2 py-1 rounded-full ${
-            dataRoom.source === 'ansarada' 
-              ? 'bg-purple-100 text-purple-700 border border-purple-200'
-              : 'bg-blue-100 text-blue-700 border border-blue-200'
-          }`}>
-            {dataRoom.source.toUpperCase()}
-          </span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-2 text-sm text-gray-600">
-          <div className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4" />
-            <span>Created {new Date(dataRoom.created_at).toLocaleDateString('en-US', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className={`h-2 w-2 rounded-full ${
-              dataRoom.status === 'active' 
-                ? 'bg-green-500' 
-                : dataRoom.status === 'disabled'
-                ? 'bg-yellow-500'
-                : 'bg-red-500'
-            }`} />
-            <span className="capitalize">{dataRoom.status}</span>
-          </div>
-          <div className="text-xs text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded">
-            Root Folder: {dataRoom.root_folder_id}
+    <div className="flex items-center justify-between p-6 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
+      {/* Left side - Icon and Name */}
+      <div className="flex items-center space-x-4">
+        <Folder className="h-7 w-7 text-blue-600 flex-shrink-0" />
+        <div>
+          <h4 className="text-lg font-semibold text-gray-900 truncate">{dataRoom.name}</h4>
+          <div className="flex items-center space-x-3 mt-1">
+            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+              dataRoom.source === 'ansarada' 
+                ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                : 'bg-blue-100 text-blue-800 border border-blue-200'
+            }`}>
+              {dataRoom.source.toUpperCase()}
+            </span>
+            <div className="flex items-center space-x-1">
+              <div className={`h-2 w-2 rounded-full ${getStatusColorClass(dataRoom.status)}`} />
+              <span className="text-xs font-medium text-gray-600 capitalize">{dataRoom.status}</span>
+            </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      
+      {/* Right side - Date */}
+      <div className="flex items-center space-x-2 text-gray-500">
+        <Calendar className="h-4 w-4" />
+        <span className="text-sm font-medium">{new Date(dataRoom.created_at).toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'short', 
+          day: 'numeric' 
+        })}</span>
+      </div>
+    </div>
   )
 }
 
-export function ProjectDataRooms({ dataRoomIds }: ProjectDataRoomsProps) {
-  if (dataRoomIds.length === 0) {
+export function ProjectDataRooms({ projectId }: ProjectDataRoomsProps) {
+  const { data: dataRooms, isLoading, error } = useProjectDataRooms(projectId)
+
+  if (isLoading) {
     return (
-      <div className="text-center py-12">
-        <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-semibold text-gray-600 mb-2">No Data Rooms</h3>
-        <p className="text-gray-500">This project doesn't have any data rooms linked yet.</p>
+      <div className="h-full w-full flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="text-red-500 bg-red-50 p-6 rounded-md">
+          Error loading data rooms: {error.message}
+        </div>
+      </div>
+    )
+  }
+
+  if (!dataRooms || dataRooms.length === 0) {
+    return (
+      <div className="h-full w-full flex items-center justify-center">
+        <div className="text-center">
+          <Folder className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">No Data Rooms</h3>
+          <p className="text-gray-500">This project doesn't have any data rooms linked yet.</p>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Data Rooms ({dataRoomIds.length})</h3>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {dataRoomIds.map((dataRoomId) => (
-          <DataRoomCard key={dataRoomId} dataRoomId={dataRoomId} />
-        ))}
+    <div className="h-full w-full p-6">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-2xl font-bold">Data Rooms ({dataRooms.length})</h3>
+        </div>
+        <div className="space-y-3">
+          {dataRooms.map((dataRoom) => (
+            <DataRoomRow key={dataRoom.id} dataRoom={dataRoom} />
+          ))}
+        </div>
       </div>
     </div>
   )
