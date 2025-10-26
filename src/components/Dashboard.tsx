@@ -1,12 +1,103 @@
 import { Link } from 'react-router-dom'
 import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
-import { Building, Calendar, Eye } from 'lucide-react'
-import { useUserAccessibleProjects } from '../hooks/api'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
+import { Input } from './ui/input'
+import { Textarea } from './ui/textarea'
+import { Label } from './ui/label'
+import { Building, Calendar, Eye, Plus } from 'lucide-react'
+import { useUserAccessibleProjects, useCreateProject, useAddUserToProject } from '../hooks/api'
 import { LoadingSpinner } from './LoadingSpinner'
+import { useState } from 'react'
 
 // Hardcoded user ID for now - will be replaced with Supabase auth later
 const CURRENT_USER_ID = 'fdd39363-b1cd-430e-88a8-f1a6199f33ff'
+
+function CreateProjectDialog() {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [description, setDescription] = useState('')
+  const createProject = useCreateProject()
+  const addUserToProject = useAddUserToProject()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const newProject = await createProject.mutateAsync({
+        name: name.trim(),
+        description: description.trim() || null
+      })
+      
+      // Link the current user to the newly created project as admin
+      if (newProject) {
+        await addUserToProject.mutateAsync({
+          projectId: newProject.id,
+          userId: CURRENT_USER_ID,
+          body: { user_role: 'admin' }
+        })
+      }
+      
+      setName('')
+      setDescription('')
+      setOpen(false)
+    } catch (error) {
+      console.error('Failed to create project:', error)
+    }
+  }
+
+  const isPending = createProject.isPending || addUserToProject.isPending
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="lg">
+          <Plus className="h-4 w-4 mr-2" />
+          Create New Project
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Create New Project</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Project Name</Label>
+            <Input
+              id="name"
+              placeholder="Enter project name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description (Optional)</Label>
+            <Textarea
+              id="description"
+              placeholder="Enter project description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending || !name.trim()}>
+              {isPending ? 'Creating...' : 'Create Project'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 export function Dashboard() {
   const { data: projects, isLoading, error } = useUserAccessibleProjects(CURRENT_USER_ID)
@@ -33,6 +124,11 @@ export function Dashboard() {
 
   return (
     <div className="h-full w-full p-6 space-y-6 overflow-auto">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900 leading-none">Projects</h1>
+        <CreateProjectDialog />
+      </div>
+
       {/* Projects List */}
       {projects && projects.length > 0 ? (
         <div className="space-y-4">
@@ -95,12 +191,10 @@ export function Dashboard() {
           <CardContent className="text-center py-12">
             <Building className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Projects Found</h3>
-            <p className="text-muted-foreground mb-4">
-              You don't have access to any projects yet.
+            <p className="text-muted-foreground mb-6">
+              You don't have access to any projects yet. Create your first project to get started.
             </p>
-            <p className="text-sm text-muted-foreground">
-              Contact your administrator to get access to projects.
-            </p>
+            <CreateProjectDialog />
           </CardContent>
         </Card>
       )}

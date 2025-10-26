@@ -1,10 +1,100 @@
-import { useProjectDataRooms } from '../hooks/api'
-import { Folder, Calendar } from 'lucide-react'
+import { useProjectDataRooms, useCreateDataRoom, useLinkDataRoom } from '../hooks/api'
+import { Folder, Calendar, Plus } from 'lucide-react'
 import { LoadingSpinner } from './LoadingSpinner'
+import { Button } from './ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
+import { Input } from './ui/input'
+import { Label } from './ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import type { DataRoom } from '../types/api'
+import { useState } from 'react'
 
 interface ProjectDataRoomsProps {
   readonly projectId: string
+}
+
+function CreateDataRoomDialog({ projectId }: { readonly projectId: string }) {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [source, setSource] = useState<'original' | 'ansarada'>('original')
+  const createDataRoom = useCreateDataRoom()
+  const linkDataRoom = useLinkDataRoom()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    try {
+      const dataRoom = await createDataRoom.mutateAsync({
+        name: name.trim(),
+        source
+      })
+      if (dataRoom) {
+        await linkDataRoom.mutateAsync({
+          projectId,
+          dataRoomId: dataRoom.id
+        })
+      }
+      setName('')
+      setSource('original')
+      setOpen(false)
+    } catch (error) {
+      console.error('Failed to create data room:', error)
+    }
+  }
+
+  const isPending = createDataRoom.isPending || linkDataRoom.isPending
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Data Room
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Create New Data Room</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Data Room Name</Label>
+            <Input
+              id="name"
+              placeholder="Enter data room name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="source">Source</Label>
+            <Select value={source} onValueChange={(value: 'original' | 'ansarada') => setSource(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="original">Original</SelectItem>
+                <SelectItem value="ansarada">Ansarada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex justify-end space-x-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isPending}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isPending || !name.trim()}>
+              {isPending ? 'Creating...' : 'Create Data Room'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 function DataRoomRow({ dataRoom }: { readonly dataRoom: DataRoom }) {
@@ -22,11 +112,11 @@ function DataRoomRow({ dataRoom }: { readonly dataRoom: DataRoom }) {
   return (
     <div className="flex items-center justify-between p-6 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
       {/* Left side - Icon and Name */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center gap-3 flex-1 min-w-0">
         <Folder className="h-7 w-7 text-blue-600 flex-shrink-0" />
-        <div>
-          <h4 className="text-lg font-semibold text-gray-900 truncate">{dataRoom.name}</h4>
-          <div className="flex items-center space-x-3 mt-1">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-3">
+            <h4 className="text-lg font-semibold text-gray-900 truncate">{dataRoom.name}</h4>
             <span className={`text-xs px-2 py-1 rounded-full font-medium ${
               dataRoom.source === 'ansarada' 
                 ? 'bg-purple-100 text-purple-800 border border-purple-200'
@@ -34,7 +124,7 @@ function DataRoomRow({ dataRoom }: { readonly dataRoom: DataRoom }) {
             }`}>
               {dataRoom.source.toUpperCase()}
             </span>
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center gap-1">
               <div className={`h-2 w-2 rounded-full ${getStatusColorClass(dataRoom.status)}`} />
               <span className="text-xs font-medium text-gray-600 capitalize">{dataRoom.status}</span>
             </div>
@@ -43,7 +133,7 @@ function DataRoomRow({ dataRoom }: { readonly dataRoom: DataRoom }) {
       </div>
       
       {/* Right side - Date */}
-      <div className="flex items-center space-x-2 text-gray-500">
+      <div className="flex items-center gap-2 text-gray-500 flex-shrink-0">
         <Calendar className="h-4 w-4" />
         <span className="text-sm font-medium">{new Date(dataRoom.created_at).toLocaleDateString('en-US', { 
           year: 'numeric', 
@@ -76,29 +166,29 @@ export function ProjectDataRooms({ projectId }: ProjectDataRoomsProps) {
     )
   }
 
-  if (!dataRooms || dataRooms.length === 0) {
-    return (
-      <div className="h-full w-full flex items-center justify-center">
-        <div className="text-center">
-          <Folder className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">No Data Rooms</h3>
-          <p className="text-gray-500">This project doesn't have any data rooms linked yet.</p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="h-full w-full p-6">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-2xl font-bold">Data Rooms ({dataRooms.length})</h3>
+          <h3 className="text-2xl font-bold">Data Rooms ({dataRooms?.length || 0})</h3>
+          <CreateDataRoomDialog projectId={projectId} />
         </div>
-        <div className="space-y-3">
-          {dataRooms.map((dataRoom) => (
-            <DataRoomRow key={dataRoom.id} dataRoom={dataRoom} />
-          ))}
-        </div>
+        
+        {!dataRooms || dataRooms.length === 0 ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Folder className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">No Data Rooms</h3>
+              <p className="text-gray-500">This project doesn't have any data rooms linked yet.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {dataRooms.map((dataRoom) => (
+              <DataRoomRow key={dataRoom.id} dataRoom={dataRoom} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

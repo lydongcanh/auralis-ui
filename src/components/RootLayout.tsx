@@ -18,10 +18,7 @@ export function RootLayout() {
                 Dashboard
               </Link>
               <button className="text-gray-600 hover:text-gray-900 transition-colors">
-                Settings
-              </button>
-              <button className="text-gray-600 hover:text-gray-900 transition-colors">
-                Help
+                Ted Ly (lydongcanh@gmail.com)
               </button>
             </nav>
           </div>
