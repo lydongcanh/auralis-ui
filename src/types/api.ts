@@ -69,6 +69,45 @@ export interface AddUserToProjectBody {
   user_role: UserRole
 }
 
+// Document Tree Types
+export interface Folder {
+  id: string
+  name: string
+  data_room_id: string
+  parent_folder_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface FolderIn {
+  name: string
+  data_room_id: string
+  parent_folder_id: string | null
+}
+
+export interface Document {
+  id: string
+  name: string
+  content: string
+  data_room_id: string
+  folder_id: string
+  created_at: string
+  updated_at: string
+}
+
+export interface DocumentIn {
+  name: string
+  content: string
+  data_room_id: string
+  folder_id: string
+}
+
+export interface DocumentTree {
+  data_room_id: string
+  folders: Folder[]
+  documents: Document[]
+}
+
 export interface HTTPValidationError {
   detail: Array<{
     loc: Array<string | number>

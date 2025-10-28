@@ -1,6 +1,7 @@
 import { useProjectDataRooms, useCreateDataRoom, useLinkDataRoom } from '../hooks/api'
-import { Folder, Calendar, Plus } from 'lucide-react'
+import { Folder, Calendar, Plus, ChevronDown, ChevronRight } from 'lucide-react'
 import { LoadingSpinner } from './LoadingSpinner'
+import { DocumentTree } from './DocumentTree'
 import { Button } from './ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Input } from './ui/input'
@@ -98,6 +99,8 @@ function CreateDataRoomDialog({ projectId }: { readonly projectId: string }) {
 }
 
 function DataRoomRow({ dataRoom }: { readonly dataRoom: DataRoom }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+  
   const getStatusColorClass = (status: string) => {
     switch (status) {
       case 'active':
@@ -110,37 +113,67 @@ function DataRoomRow({ dataRoom }: { readonly dataRoom: DataRoom }) {
   }
 
   return (
-    <div className="flex items-center justify-between p-6 bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-      {/* Left side - Icon and Name */}
-      <div className="flex items-center gap-3 flex-1 min-w-0">
-        <Folder className="h-7 w-7 text-blue-600 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3">
-            <h4 className="text-lg font-semibold text-gray-900 truncate">{dataRoom.name}</h4>
-            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-              dataRoom.source === 'ansarada' 
-                ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                : 'bg-blue-100 text-blue-800 border border-blue-200'
-            }`}>
-              {dataRoom.source.toUpperCase()}
-            </span>
-            <div className="flex items-center gap-1">
-              <div className={`h-2 w-2 rounded-full ${getStatusColorClass(dataRoom.status)}`} />
-              <span className="text-xs font-medium text-gray-600 capitalize">{dataRoom.status}</span>
+    <div className="border border-gray-200 rounded-lg bg-white hover:shadow-md transition-shadow">
+      {/* Main row */}
+      <div className="flex items-center justify-between p-6">
+        {/* Left side - Icon and Name */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <Folder className="h-7 w-7 text-blue-600 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3">
+              <h4 className="text-lg font-semibold text-gray-900 truncate">{dataRoom.name}</h4>
+              <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                dataRoom.source === 'ansarada' 
+                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                  : 'bg-blue-100 text-blue-800 border border-blue-200'
+              }`}>
+                {dataRoom.source.toUpperCase()}
+              </span>
+              <div className="flex items-center gap-1">
+                <div className={`h-2 w-2 rounded-full ${getStatusColorClass(dataRoom.status)}`} />
+                <span className="text-xs font-medium text-gray-600 capitalize">{dataRoom.status}</span>
+              </div>
             </div>
           </div>
         </div>
+        
+        {/* Right side - Date and Actions */}
+        <div className="flex items-center gap-4 text-gray-500 flex-shrink-0">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            <span className="text-sm font-medium">{new Date(dataRoom.created_at).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'short', 
+              day: 'numeric' 
+            })}</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center gap-2"
+          >
+            {isExpanded ? (
+              <>
+                <ChevronDown className="h-4 w-4" />
+                Hide Documents
+              </>
+            ) : (
+              <>
+                <ChevronRight className="h-4 w-4" />
+                View Documents
+              </>
+            )}
+          </Button>
+        </div>
       </div>
       
-      {/* Right side - Date */}
-      <div className="flex items-center gap-2 text-gray-500 flex-shrink-0">
-        <Calendar className="h-4 w-4" />
-        <span className="text-sm font-medium">{new Date(dataRoom.created_at).toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'short', 
-          day: 'numeric' 
-        })}</span>
-      </div>
+      {/* Expandable Document Tree */}
+      {isExpanded && (
+        <div className="border-t border-gray-200 p-6 bg-gray-50">
+          <DocumentTree dataRoomId={dataRoom.id} />
+        </div>
+      )}
     </div>
   )
 }

@@ -19,6 +19,7 @@ export const queryKeys = {
     all: ['dataRooms'] as const,
     detail: (id: string) => ['dataRooms', id] as const,
     ansarada: (accessToken: string) => ['dataRooms', 'ansarada', accessToken] as const,
+    documentTree: (id: string) => ['dataRooms', id, 'documentTree'] as const,
   },
   users: {
     all: ['users'] as const,
@@ -150,6 +151,56 @@ export const useAnsaradaDataRooms = (accessToken: string, first?: number) => {
     queryKey: queryKeys.dataRooms.ansarada(accessToken),
     queryFn: () => dataRoomsApi.getAnsaradaDataRooms(accessToken, first),
     enabled: !!accessToken,
+  })
+}
+
+export const useDocumentTree = (dataRoomId: string) => {
+  return useQuery({
+    queryKey: queryKeys.dataRooms.documentTree(dataRoomId),
+    queryFn: () => dataRoomsApi.getDocumentTree(dataRoomId),
+    enabled: !!dataRoomId,
+  })
+}
+
+export const useCreateFolder = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ 
+      dataRoomId, 
+      name, 
+      parentFolderId 
+    }: { 
+      dataRoomId: string
+      name: string
+      parentFolderId: string | null
+    }) =>
+      dataRoomsApi.createFolder(dataRoomId, name, parentFolderId),
+    onSuccess: (_, { dataRoomId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.dataRooms.documentTree(dataRoomId) })
+    },
+  })
+}
+
+export const useCreateDocument = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ 
+      dataRoomId, 
+      name, 
+      content, 
+      folderId 
+    }: { 
+      dataRoomId: string
+      name: string
+      content: string
+      folderId: string
+    }) =>
+      dataRoomsApi.createDocument(dataRoomId, name, content, folderId),
+    onSuccess: (_, { dataRoomId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.dataRooms.documentTree(dataRoomId) })
+    },
   })
 }
 

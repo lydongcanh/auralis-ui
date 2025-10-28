@@ -8,7 +8,10 @@ import type {
   UserIn, 
   UserAccessibleProjectOut,
   ProjectUserOut,
-  AddUserToProjectBody
+  AddUserToProjectBody,
+  Folder,
+  Document,
+  DocumentTree
 } from '../types/api'
 
 const API_BASE_URL = 'http://127.0.0.1:8000'
@@ -94,6 +97,30 @@ export const dataRoomsApi = {
     
     const response: AxiosResponse<DataRoom[]> = await apiClient.get(
       `/ansarada/data-rooms?${params.toString()}`
+    )
+    return response.data
+  },
+
+  // Document Tree endpoints
+  createFolder: async (dataRoomId: string, name: string, parentFolderId: string | null): Promise<Folder | null> => {
+    const response: AxiosResponse<Folder | null> = await apiClient.post(
+      `/data-rooms/${dataRoomId}/folders`,
+      { name, parent_folder_id: parentFolderId }
+    )
+    return response.data
+  },
+
+  createDocument: async (dataRoomId: string, name: string, content: string, folderId: string): Promise<Document | null> => {
+    const response: AxiosResponse<Document | null> = await apiClient.post(
+      `/data-rooms/${dataRoomId}/documents`,
+      { name, content, folder_id: folderId }
+    )
+    return response.data
+  },
+
+  getDocumentTree: async (dataRoomId: string): Promise<DocumentTree | null> => {
+    const response: AxiosResponse<DocumentTree | null> = await apiClient.get(
+      `/data-rooms/${dataRoomId}/document-tree`
     )
     return response.data
   },

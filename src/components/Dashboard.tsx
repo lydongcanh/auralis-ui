@@ -174,7 +174,7 @@ export function Dashboard() {
                   </div>
                   
                   <div className="ml-6">
-                    <Link to={`/projects/${project.id}`} target="_blank" rel="noopener noreferrer">
+                    <Link to={`/projects/${project.id}`}>
                       <Button size="lg" className="min-w-[120px]">
                         <Eye className="h-4 w-4 mr-2" />
                         Open Project
