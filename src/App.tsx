@@ -1,14 +1,12 @@
 import './App.css'
 import { Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { ErrorBoundary } from './components/ErrorBoundary'
-import { RootLayout } from './components/RootLayout'
-import { LoadingSpinner } from './components/LoadingSpinner'
+import { ErrorBoundary, LoadingSpinner, NotFound } from './components/common'
+import { RootLayout } from './components/layout'
 
 // Lazy load components for better performance
-const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })))
-const ProjectView = lazy(() => import('./components/ProjectView').then(module => ({ default: module.ProjectView })))
-const NotFound = lazy(() => import('./components/NotFound').then(module => ({ default: module.NotFound })))
+const Dashboard = lazy(() => import('./components/project').then(module => ({ default: module.Dashboard })))
+const ProjectView = lazy(() => import('./components/project').then(module => ({ default: module.ProjectView })))
 
 function App() {
   return (

@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, File, Folder, FolderPlus, FilePlus } from 'lucide-react'
-import { Button } from './ui/button'
-import { LoadingSpinner } from './LoadingSpinner'
-import { useDocumentTree, useCreateFolder, useCreateDocument } from '../hooks/api'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
-import { Textarea } from './ui/textarea'
-import type { DocumentTreeNode, Folder as FolderType, Document as DocumentType } from '../types/api'
+import { Button } from '../ui/button'
+import { LoadingSpinner } from '../common'
+import { useDocumentTree, useCreateFolder, useCreateDocument } from '../../hooks/api'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
+import { Input } from '../ui/input'
+import { Label } from '../ui/label'
+import { Textarea } from '../ui/textarea'
+import type { DocumentTreeNode, Folder as FolderType, Document as DocumentType } from '../../types/api'
 
 interface DocumentTreeProps {
   readonly dataRoomId: string

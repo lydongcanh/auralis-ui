@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { useDataRoom, useAnsaradaDataRooms } from '../hooks/api'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
+import { useDataRoom, useAnsaradaDataRooms } from '../../hooks/api'
 import { Loader2, Search, ExternalLink } from 'lucide-react'
 
 export function DataRoomList() {

@@ -1,6 +1,6 @@
 import { Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
-import { Button } from './ui/button'
+import { Button } from '../ui/button'
 import { RefreshCw } from 'lucide-react'
 
 interface Props {

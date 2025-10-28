@@ -1,10 +1,10 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
-import { useCreateUser } from '../hooks/api'
-import { userSchema, type UserFormData } from '../lib/schemas'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
+import { Label } from '../ui/label'
+import { useCreateUser } from '../../hooks/api'
+import { userSchema, type UserFormData } from '../../lib/schemas'
 
 interface UserFormProps {
   readonly onSuccess: () => void

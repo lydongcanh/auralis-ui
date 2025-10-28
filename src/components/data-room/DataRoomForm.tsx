@@ -1,11 +1,11 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Label } from './ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { useCreateDataRoom } from '../hooks/api'
-import { dataRoomSchema, type DataRoomFormData } from '../lib/schemas'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
+import { Label } from '../ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
+import { useCreateDataRoom } from '../../hooks/api'
+import { dataRoomSchema, type DataRoomFormData } from '../../lib/schemas'
 
 interface DataRoomFormProps {
   readonly onSuccess: () => void

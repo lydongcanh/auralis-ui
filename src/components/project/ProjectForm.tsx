@@ -1,11 +1,11 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Button } from './ui/button'
-import { Input } from './ui/input'
-import { Textarea } from './ui/textarea'
-import { Label } from './ui/label'
-import { useCreateProject } from '../hooks/api'
-import { projectSchema, type ProjectFormData } from '../lib/schemas'
+import { Button } from '../ui/button'
+import { Input } from '../ui/input'
+import { Textarea } from '../ui/textarea'
+import { Label } from '../ui/label'
+import { useCreateProject } from '../../hooks/api'
+import { projectSchema, type ProjectFormData } from '../../lib/schemas'
 
 interface ProjectFormProps {
   readonly onSuccess: () => void
