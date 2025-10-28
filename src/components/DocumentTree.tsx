@@ -1,35 +1,44 @@
-import { useDocumentTree, useCreateFolder, useCreateDocument } from '../hooks/api'
-import { Folder, File, FolderPlus, FileText } from 'lucide-react'
-import { LoadingSpinner } from './LoadingSpinner'
+import { useState } from 'react'
+import { ChevronDown, ChevronRight, File, Folder, FolderPlus, FilePlus } from 'lucide-react'
 import { Button } from './ui/button'
+import { LoadingSpinner } from './LoadingSpinner'
+import { useDocumentTree, useCreateFolder, useCreateDocument } from '../hooks/api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Input } from './ui/input'
-import { Textarea } from './ui/textarea'
 import { Label } from './ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import type { Folder as FolderType, Document as DocumentType } from '../types/api'
-import { useState } from 'react'
+import { Textarea } from './ui/textarea'
+import type { DocumentTreeNode, Folder as FolderType, Document as DocumentType } from '../types/api'
 
 interface DocumentTreeProps {
   readonly dataRoomId: string
 }
 
-function CreateFolderDialog({ dataRoomId, folders }: { readonly dataRoomId: string; readonly folders: FolderType[] }) {
+interface CreateFolderDialogProps {
+  readonly dataRoomId: string
+  readonly parentFolderId?: string
+}
+
+interface CreateDocumentDialogProps {
+  readonly dataRoomId: string
+  readonly folderId: string
+}
+
+function CreateFolderDialog({ dataRoomId, parentFolderId }: CreateFolderDialogProps) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
-  const [parentFolderId, setParentFolderId] = useState<string | null>(null)
-  const createFolder = useCreateFolder()
+  const createFolderMutation = useCreateFolder()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!name.trim()) return
+
     try {
-      await createFolder.mutateAsync({
+      await createFolderMutation.mutateAsync({
         dataRoomId,
         name: name.trim(),
-        parentFolderId
+        parentFolderId: parentFolderId || null,
       })
       setName('')
-      setParentFolderId(null)
       setOpen(false)
     } catch (error) {
       console.error('Failed to create folder:', error)
@@ -39,12 +48,11 @@ function CreateFolderDialog({ dataRoomId, folders }: { readonly dataRoomId: stri
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <FolderPlus className="h-4 w-4 mr-2" />
-          New Folder
+        <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+          <FolderPlus className="h-3 w-3" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Create New Folder</DialogTitle>
         </DialogHeader>
@@ -53,39 +61,18 @@ function CreateFolderDialog({ dataRoomId, folders }: { readonly dataRoomId: stri
             <Label htmlFor="folder-name">Folder Name</Label>
             <Input
               id="folder-name"
-              placeholder="Enter folder name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="Enter folder name"
               required
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="parent-folder">Parent Folder (Optional)</Label>
-            <Select value={parentFolderId || 'root'} onValueChange={(value) => setParentFolderId(value === 'root' ? null : value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select parent folder" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="root">Root Folder</SelectItem>
-                {folders.map((folder) => (
-                  <SelectItem key={folder.id} value={folder.id}>
-                    {folder.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={createFolder.isPending}
-            >
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createFolder.isPending || !name.trim()}>
-              {createFolder.isPending ? 'Creating...' : 'Create Folder'}
+            <Button type="submit" disabled={createFolderMutation.isPending}>
+              {createFolderMutation.isPending ? 'Creating...' : 'Create Folder'}
             </Button>
           </div>
         </form>
@@ -94,25 +81,25 @@ function CreateFolderDialog({ dataRoomId, folders }: { readonly dataRoomId: stri
   )
 }
 
-function CreateDocumentDialog({ dataRoomId, folders }: { readonly dataRoomId: string; readonly folders: FolderType[] }) {
+function CreateDocumentDialog({ dataRoomId, folderId }: CreateDocumentDialogProps) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
-  const [folderId, setFolderId] = useState<string>('')
-  const createDocument = useCreateDocument()
+  const createDocumentMutation = useCreateDocument()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!name.trim()) return
+
     try {
-      await createDocument.mutateAsync({
+      await createDocumentMutation.mutateAsync({
         dataRoomId,
         name: name.trim(),
         content: content.trim(),
-        folderId
+        folderId,
       })
       setName('')
       setContent('')
-      setFolderId('')
       setOpen(false)
     } catch (error) {
       console.error('Failed to create document:', error)
@@ -122,12 +109,11 @@ function CreateDocumentDialog({ dataRoomId, folders }: { readonly dataRoomId: st
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <FileText className="h-4 w-4 mr-2" />
-          New Document
+        <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+          <FilePlus className="h-3 w-3" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Create New Document</DialogTitle>
         </DialogHeader>
@@ -136,49 +122,28 @@ function CreateDocumentDialog({ dataRoomId, folders }: { readonly dataRoomId: st
             <Label htmlFor="document-name">Document Name</Label>
             <Input
               id="document-name"
-              placeholder="Enter document name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              placeholder="Enter document name"
               required
             />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="folder-select">Folder</Label>
-            <Select value={folderId} onValueChange={setFolderId} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select folder" />
-              </SelectTrigger>
-              <SelectContent>
-                {folders.map((folder) => (
-                  <SelectItem key={folder.id} value={folder.id}>
-                    {folder.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="document-content">Content</Label>
             <Textarea
               id="document-content"
-              placeholder="Enter document content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
+              placeholder="Enter document content"
               rows={6}
-              required
             />
           </div>
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              disabled={createDocument.isPending}
-            >
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createDocument.isPending || !name.trim() || !folderId || !content.trim()}>
-              {createDocument.isPending ? 'Creating...' : 'Create Document'}
+            <Button type="submit" disabled={createDocumentMutation.isPending}>
+              {createDocumentMutation.isPending ? 'Creating...' : 'Create Document'}
             </Button>
           </div>
         </form>
@@ -187,64 +152,97 @@ function CreateDocumentDialog({ dataRoomId, folders }: { readonly dataRoomId: st
   )
 }
 
-function FolderItem({ folder, documents }: { readonly folder: FolderType; readonly documents: DocumentType[] }) {
-  const folderDocuments = documents.filter(doc => doc.folder_id === folder.id)
+function DocumentTreeNodeItem({ 
+  node, 
+  dataRoomId, 
+  level = 0 
+}: { 
+  readonly node: DocumentTreeNode
+  readonly dataRoomId: string
+  readonly level?: number 
+}) {
+  const [expanded, setExpanded] = useState(level < 2) // Auto-expand first 2 levels
+
+  const hasChildren = node.children.length > 0
+  const indent = level * 24
+
+  if (node.type === 'Document') {
+    const document = node.data as DocumentType
+    return (
+      <div 
+        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 rounded-md"
+        style={{ marginLeft: indent }}
+      >
+        <File className="h-4 w-4 text-blue-600 flex-shrink-0" />
+        <span className="text-sm font-medium text-gray-900 truncate">
+          {document.name}
+        </span>
+        <span className="text-xs text-gray-500 ml-auto">
+          {document.content?.length || 0} chars
+        </span>
+      </div>
+    )
+  }
+
+  const folder = node.data as FolderType
   
   return (
-    <div className="border border-gray-200 rounded-lg bg-white">
-      <div className="flex items-center gap-3 p-4 border-b border-gray-100">
-        <Folder className="h-5 w-5 text-blue-600 flex-shrink-0" />
-        <div className="flex-1">
-          <h4 className="font-medium text-gray-900">{folder.name}</h4>
-          <p className="text-xs text-gray-500">
-            {folderDocuments.length} document{folderDocuments.length === 1 ? '' : 's'}
-          </p>
+    <div>
+      <div 
+        className="flex items-center gap-2 py-2 px-3 hover:bg-gray-50 rounded-md group"
+        style={{ marginLeft: indent }}
+      >
+        <button
+          onClick={() => hasChildren && setExpanded(!expanded)}
+          className="flex items-center gap-1 flex-1 cursor-pointer"
+        >
+          {hasChildren ? (
+            <div className="flex-shrink-0">
+              {expanded ? (
+                <ChevronDown className="h-4 w-4 text-gray-600" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-gray-600" />
+              )}
+            </div>
+          ) : (
+            <div className="w-4 h-4 flex-shrink-0" />
+          )}
+          
+          <Folder className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+          
+          <span className="text-sm font-medium text-gray-900 truncate">
+            {folder.name}
+          </span>
+          
+          <span className="text-xs text-gray-500 ml-auto">
+            {node.children.length} item{node.children.length === 1 ? '' : 's'}
+          </span>
+        </button>
+        
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <CreateFolderDialog 
+            dataRoomId={dataRoomId} 
+            parentFolderId={folder.id} 
+          />
+          <CreateDocumentDialog 
+            dataRoomId={dataRoomId} 
+            folderId={folder.id} 
+          />
         </div>
       </div>
-      
-      {folderDocuments.length > 0 && (
-        <div className="p-2">
-          {folderDocuments.map((document) => (
-            <div key={document.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
-              <File className="h-4 w-4 text-gray-400 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm text-gray-900 truncate">{document.name}</p>
-                <p className="text-xs text-gray-500 truncate">{document.content.substring(0, 100)}...</p>
-              </div>
-            </div>
+
+      {expanded && hasChildren && (
+        <div className="space-y-1">
+          {node.children.map((child) => (
+            <DocumentTreeNodeItem
+              key={child.data.id}
+              node={child}
+              dataRoomId={dataRoomId}
+              level={level + 1}
+            />
           ))}
         </div>
       )}
-    </div>
-  )
-}
-
-function RootDocuments({ documents }: { readonly documents: DocumentType[] }) {
-  if (documents.length === 0) return null
-  
-  return (
-    <div className="border border-gray-200 rounded-lg bg-white">
-      <div className="flex items-center gap-3 p-4 border-b border-gray-100">
-        <Folder className="h-5 w-5 text-gray-600 flex-shrink-0" />
-        <div className="flex-1">
-          <h4 className="font-medium text-gray-900">Root Documents</h4>
-          <p className="text-xs text-gray-500">
-            {documents.length} document{documents.length === 1 ? '' : 's'}
-          </p>
-        </div>
-      </div>
-      
-      <div className="p-2">
-        {documents.map((document) => (
-          <div key={document.id} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
-            <File className="h-4 w-4 text-gray-400 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-sm text-gray-900 truncate">{document.name}</p>
-              <p className="text-xs text-gray-500 truncate">{document.content.substring(0, 100)}...</p>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
@@ -268,7 +266,6 @@ export function DocumentTree({ dataRoomId }: DocumentTreeProps) {
     )
   }
 
-  // Add debugging
   console.log('DocumentTree received data:', documentTree)
 
   if (!documentTree || typeof documentTree !== 'object') {
@@ -283,45 +280,17 @@ export function DocumentTree({ dataRoomId }: DocumentTreeProps) {
     )
   }
 
-  // Safe destructuring with proper type checking
-  const folders = Array.isArray(documentTree.folders) ? documentTree.folders : []
-  const documents = Array.isArray(documentTree.documents) ? documentTree.documents : []
-  
-  // Separate documents without folder_id (root documents)
-  const rootDocuments = documents.filter(doc => !folders.some(folder => folder.id === doc.folder_id))
-  
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">Document Tree</h2>
-        <div className="flex items-center gap-2">
-          <CreateFolderDialog dataRoomId={dataRoomId} folders={folders} />
-          {folders.length > 0 && (
-            <CreateDocumentDialog dataRoomId={dataRoomId} folders={folders} />
-          )}
+      <div className="border border-gray-200 rounded-lg bg-white">
+        <div className="p-4 space-y-1">
+          <DocumentTreeNodeItem
+            node={documentTree}
+            dataRoomId={dataRoomId}
+            level={0}
+          />
         </div>
       </div>
-
-      {folders.length === 0 && documents.length === 0 ? (
-        <div className="text-center py-12 border border-gray-200 rounded-lg bg-gray-50">
-          <Folder className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Empty Document Tree</h3>
-          <p className="text-muted-foreground mb-6">
-            Start by creating your first folder to organize documents.
-          </p>
-          <CreateFolderDialog dataRoomId={dataRoomId} folders={folders} />
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {/* Root documents */}
-          <RootDocuments documents={rootDocuments} />
-          
-          {/* Folders with their documents */}
-          {folders.map((folder) => (
-            <FolderItem key={folder.id} folder={folder} documents={documents} />
-          ))}
-        </div>
-      )}
     </div>
   )
 }

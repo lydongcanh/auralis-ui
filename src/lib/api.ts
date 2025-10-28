@@ -112,8 +112,8 @@ export const dataRoomsApi = {
 
   createDocument: async (dataRoomId: string, name: string, content: string, folderId: string): Promise<Document | null> => {
     const response: AxiosResponse<Document | null> = await apiClient.post(
-      `/data-rooms/${dataRoomId}/documents`,
-      { name, content, folder_id: folderId }
+      `/data-rooms/${dataRoomId}/folders/${folderId}/documents`,
+      { name, content }
     )
     return response.data
   },

@@ -102,11 +102,13 @@ export interface DocumentIn {
   folder_id: string
 }
 
-export interface DocumentTree {
-  data_room_id: string
-  folders: Folder[]
-  documents: Document[]
+export interface DocumentTreeNode {
+  data: Folder | Document
+  children: DocumentTreeNode[]
+  type: 'Folder' | 'Document'
 }
+
+export type DocumentTree = DocumentTreeNode
 
 export interface HTTPValidationError {
   detail: Array<{
