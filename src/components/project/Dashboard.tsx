@@ -11,7 +11,7 @@ import { LoadingSpinner } from '../common'
 import { useState } from 'react'
 
 // Hardcoded user ID for now - will be replaced with Supabase auth later
-const CURRENT_USER_ID = 'fdd39363-b1cd-430e-88a8-f1a6199f33ff'
+const CURRENT_USER_ID = 'f340e278-3f09-4952-b015-b3cfdf1b0ded'
 
 function CreateProjectDialog() {
   const [open, setOpen] = useState(false)

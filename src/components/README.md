@@ -1,4 +1,4 @@
-# Component Organization
+# Components
 
 This directory contains all React components organized by feature and responsibility.
 
